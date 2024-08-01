@@ -18,8 +18,3 @@ export interface SimpleExerciseType {
     primaryMuscles: Set<string>;
     imagesURL: string[];
 }
-
-export interface ExerciseGridType extends SimpleExerciseType {
-    total: number;
-    totalPages: number;
-}

@@ -10,78 +10,81 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField"
 import SearchOutlined from "@mui/icons-material/SearchOutlined"
 import IconButton from "@mui/material/IconButton"
+import CircularProgress from "@mui/material/CircularProgress"
 
 
 const Exercises: React.FC = () => {
 
     const [exercises, setExercises] = useState<SimpleExerciseType[]>([]);
-    const [total, setTotal] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
 
     useEffect(() => {
-        api.get(`/exercises?page=${currentPage}`)
-            .then((response): void => {
-                const {data, total, totalPages} = response.data;
-                setExercises(data);
-                setTotal(total);
-                setTotalPages(totalPages);
-                setLoading(false);
-            })
-            .catch((error) => {
-                setError(error);
-                setLoading(false);
-                alert(error);
-            });
-    }, [currentPage]);
+        setLoading(true);
+        const delayRequest = setTimeout(() => {
+            api.get(`/exercises?page=${currentPage}&size=30&sort=name&name=${searchValue}`)
+                .then((response): void => {
+                    const {data, totalPages} = response.data;
+                    setExercises(data);
+                    setTotalPages(totalPages);
+                    setLoading(false);
+                })
+                .catch((error) => {
+                    setError(error);
+                    setLoading(false);
+                    alert(error);
+                });
+        }, 1000)
+
+        return () => clearTimeout(delayRequest);
+    }, [currentPage, searchValue]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [currentPage]);
 
     const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number): void => {
-        setCurrentPage(page);
+        setCurrentPage(page - 1);
     }
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error loading exercises</div>
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        setSearchValue(event.target.value);
+    }
 
+    const handleSearchClick = (): void => {
+        setSearchValue(searchValue);
+    }
+
+    if (error) return <div>Error loading exercises</div>
     return (
         <>
-            <Typography variant="h3">Exercises Database</Typography>
-
-
-            <Container
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flexWrap: 'wrap',
-                    gap: '1rem',
-
-                }}>
+            <Typography variant="h3" mb={3}>Exercises Database</Typography>
+            <Container sx={{paddingBottom: '2rem'}}>
                 <TextField
                     fullWidth
                     variant="outlined"
-                    placeholder="Enter your exercise..."
+                    placeholder="Search the exercise"
+                    onChange={handleSearchChange}
                     InputProps={{
                         endAdornment: (
-                            <IconButton>
+                            <IconButton onClick={handleSearchClick}>
                                 <SearchOutlined/>
                             </IconButton>
                         ),
                     }}
                     sx={{
+                        boxShadow: '0px 0px 18px 4px rgba(66, 68, 90, 1)',
+                        borderRadius: '4px',
+                        borderColor: 'InactiveBorder',
                         '& .MuiOutlinedInput-root': {
-                            '& fieldset': {
-                                borderColor: 'primary.main',
-                            },
                             '&:hover fieldset': {
                                 borderColor: 'primary.dark',
                             },
                             '&.Mui-focused fieldset': {
-                                borderColor: 'primary.light',
+                                borderColor: 'primary.dark',
                             },
                         },
                         '& .MuiInputBase-input': {
@@ -92,16 +95,26 @@ const Exercises: React.FC = () => {
                         },
                     }}
                 />
-                {exercises && exercises.map((exercise) => (
-
-                    <Exercise key={exercise.id} exercise={exercise}/>
-                ))}
             </Container>
+            {loading ?
+                <Container sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>
+                    <CircularProgress/>
+                </Container> : <Container
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                        gap: '4rem'
+                    }}>
+                    {exercises && exercises.map((exercise) => (
+                        <Exercise key={exercise.id} exercise={exercise}/>
+                    ))}
+                </Container>
+            }
             <Container
                 sx={{
                     display: 'flex',
                     justifyContent: 'center',
-                    marginTop: '2rem',
+                    marginTop: '5rem',
                 }}>
                 <Pagination
                     color="primary"
@@ -109,21 +122,19 @@ const Exercises: React.FC = () => {
                     count={totalPages}
                     variant="outlined"
                     shape="rounded"
-                    page={currentPage}
+                    page={currentPage + 1}
                     onChange={handlePageChange}
+                    sx={{
+                        '& .MuiPaginationItem-ellipsis': {
+                            color: 'white'
+                        },
+                    }}
                     renderItem={(item) => (
                         <PaginationItem
                             slots={{previous: ArrowBackIcon, next: ArrowForwardIcon}}
                             {...item}
                             sx={{
                                 color: 'white',
-                                '& .MuiPaginationItem-ellipsis': {
-                                    color: 'white'
-                                },
-                                '&. Mui-selected': {
-                                    backgroundColor: 'primary.main',
-                                    color: 'white',
-                                },
                             }}
                         />
                     )}
