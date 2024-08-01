@@ -1,10 +1,10 @@
 import './App.css'
-import ExerciseDatabase from "./exercisesDatabase/ExerciseDatabase.tsx";
+import Exercises from "./components/exercises/Exercises.tsx";
 
 function App() {
     return (
         <>
-            <ExerciseDatabase></ExerciseDatabase>
+            <Exercises></Exercises>
         </>
     )
 }
